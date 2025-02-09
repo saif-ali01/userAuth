@@ -1,7 +1,7 @@
 services:
   - type: web
     name: spring-boot-api
-    env: java
+    env: docker
     buildCommand: ./mvnw clean package
     startCommand: java -jar target/<your-jar-file>.jar
     envVars:

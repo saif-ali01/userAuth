@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: spring-boot-api
+    env: java
+    buildCommand: ./mvnw clean package
+    startCommand: java -jar target/<your-jar-file>.jar
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+    plan: free

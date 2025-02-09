@@ -3,7 +3,6 @@ services:
     name: spring-boot-api
     env: docker
     buildCommand: ./mvnw clean package
-    startCommand: java -jar target/<your-jar-file>.jar
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: production

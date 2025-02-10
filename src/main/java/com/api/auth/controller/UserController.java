@@ -13,6 +13,7 @@ import com.api.auth.services.OtpService;
 
 @RestController
 @RequestMapping("/auth") // Base URL for authentication-related routes
+@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
     // Dependency injection for repositories and services

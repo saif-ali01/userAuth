@@ -2,7 +2,7 @@
 FROM openjdk:17-jdk-slim
 
 # Set the working directory in the container
-WORKDIR /app
+WORKDIR /auth
 
 # Copy the compiled JAR file into the container
 COPY target/auth-0.0.1-SNAPSHOT.jar app.jar

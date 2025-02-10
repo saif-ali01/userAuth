@@ -1,4 +1,3 @@
-com\api\auth\controller\Forgetpassword.class
 com\api\auth\controller\ForgetPasswordOtp.class
 com\api\auth\services\OtpService.class
 com\api\auth\config\WebConfig.class
@@ -8,7 +7,8 @@ com\api\auth\modals\OtpModal.class
 com\api\auth\AuthApplication.class
 com\api\auth\controller\OtpVerificationRequest.class
 com\api\auth\modals\UserModals.class
+com\api\auth\controller\UserController$User.class
 com\api\auth\repositories\UserRepo.class
-com\api\auth\controller\User.class
 com\api\auth\controller\UserController.class
 com\api\auth\repositories\OtpRepo.class
+com\api\auth\controller\UserController$Forgetpassword.class

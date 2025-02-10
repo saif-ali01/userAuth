@@ -39,11 +39,11 @@ public class OtpController {
         if (fetchUser.isPresent()) {
             UserModals user = fetchUser.get();
             otpService.generateAndSendOtp(user.getId(), user.getEmail());
-            return ResponseEntity.ok("OTP sent successfully!"); // Success response
+            return ResponseEntity.status(200).body("OTP sent successfully!"); // Success response
         }
         
         // If user does not exist
-        return ResponseEntity.badRequest().body("User not found with the given email.");
+        return ResponseEntity.status(404).body("User not found with the given email.");
     }
 
     /**
@@ -67,12 +67,12 @@ public class OtpController {
                 // Delete the OTP record from the database
                 otpRepo.deleteAllById(user.getId());
                 
-                return ResponseEntity.ok("OTP verified successfully!");
+                return ResponseEntity.status(200).body("OTP verified successfully!");
             }
         }
         
         // Return an error if OTP is invalid or expired
-        return ResponseEntity.badRequest().body("Invalid or expired OTP!");
+        return ResponseEntity.status(404).body("Invalid or expired OTP!");
     }
 
     /**
@@ -94,12 +94,12 @@ public class OtpController {
                 user.setPassword(request.getPassword()); // Set the new password
                 userRepo.save(user); // Save the updated user details
                 
-                return ResponseEntity.ok("Password successfully changed!");
+                return ResponseEntity.status(201).body("Password successfully changed!");
             }
         }
         
         // Return an error if OTP is invalid or the user is not found
-        return ResponseEntity.badRequest().body("Invalid OTP or user not found.");
+        return ResponseEntity.status(500).body("Invalid OTP or user not found.");
     }
 
 }

@@ -1,6 +1,7 @@
 com\api\auth\controller\Forgetpassword.class
 com\api\auth\controller\ForgetPasswordOtp.class
 com\api\auth\services\OtpService.class
+com\api\auth\config\WebConfig.class
 com\api\auth\controller\OtpRequest.class
 com\api\auth\controller\OtpController.class
 com\api\auth\modals\OtpModal.class

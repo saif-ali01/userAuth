@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.api.auth.AuthApplicationTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 16.52 s -- in com.api.auth.AuthApplicationTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 15.11 s -- in com.api.auth.AuthApplicationTests

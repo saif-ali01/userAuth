@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.api.auth.Dto.OtpVerificationRequestDto;
 import com.api.auth.modals.OtpModal;
 import com.api.auth.modals.UserModals;
 import com.api.auth.repositories.OtpRepo;
@@ -62,6 +63,28 @@ public class OtpController {
 
         }
 
+    }
+    
+    @PostMapping("/verify")
+    public ResponseEntity<String> verifyOtp(@RequestBody OtpVerificationRequestDto request) {
+        boolean isValid = otpService.verifyOtp(request.getUserId(), request.getOtp());
+
+        if (isValid) {
+            // Update user verification status
+            Optional<UserModals> fetchUser = userRepo.findById(request.getUserId());
+            if (fetchUser.isPresent()) {
+                UserModals user = fetchUser.get();
+                user.setVerified(true);
+                userRepo.save(user); // Save updated user details
+                return ResponseEntity.status(200).body("OTP verified successfully!");
+            }
+
+            // If user is not found after valid OTP verification
+            return ResponseEntity.status(404).body("User not found!");
+        }
+
+        // Invalid or expired OTP
+        return ResponseEntity.status(400).body("Invalid or expired OTP.");
     }
 
 

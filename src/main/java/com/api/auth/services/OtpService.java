@@ -151,7 +151,7 @@ public ResponseEntity<?> verifyOtpAndUpdatePassword( ForgetPasswordDto request) 
                 res.setUserId(savedUser.getId());
                 res.setIsVerified(savedUser.getVerified());
 
-                return ResponseEntity.status(201).body(savedUser);
+                return ResponseEntity.status(201).body(res);
             }
         }
         return ResponseEntity.status(403).body("Otp is not Correct ");

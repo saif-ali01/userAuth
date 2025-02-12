@@ -6,8 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.api.auth.Dto.ForgetPasswordDto;
+import com.api.auth.Dto.User;
 import com.api.auth.modals.UserModals;
-import com.api.auth.repositories.OtpRepo;
 import com.api.auth.repositories.UserRepo;
 import com.api.auth.services.OtpService;
 
@@ -23,8 +24,6 @@ public class UserController {
     @Autowired
     private OtpService otpService;
 
-    @Autowired
-    private OtpRepo otpRepo;
 
     // POST endpoint for user registration
     @PostMapping("/register")
@@ -40,13 +39,13 @@ public class UserController {
             }
 
             UserModals savedUser = userRepo.save(request);
-
+            
             User user = new User();
             user.setEmail(savedUser.getEmail());
             user.setName(savedUser.getName());
             user.setUserId(savedUser.getId());
             user.setIsVerified(savedUser.getVerified());
-
+            
             return ResponseEntity.status(201).body(user);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("An error occurred: " + e.getMessage());
@@ -86,18 +85,17 @@ public class UserController {
 
     // POST endpoint for forgot password
     @PostMapping("/forgetpassword")
-    public ResponseEntity<?> forgetPassword(@RequestBody Forgetpassword email) {
+    public ResponseEntity<?> forgetPassword(@RequestBody ForgetPasswordDto request) {
         try {
-            Optional<UserModals> fetchUser = userRepo.findByEmail(email.getEmail());
-
+            Optional<UserModals> fetchUser = userRepo.findById(request.getUserId());
+            
             if (fetchUser.isEmpty()) {
                 return ResponseEntity.status(404).body("USER NOT FOUND");
             }
-
-            UserModals user = fetchUser.get();
-            otpService.generateAndSendOtp(user.getId(), email.getEmail());
-
-            return ResponseEntity.status(200).body("OTP sent to your email");
+           
+           ResponseEntity<?> res= otpService.verifyOtpAndUpdatePassword(request);
+          
+            return ResponseEntity.status(res.getStatusCode()).body(res.getBody());
         } catch (Exception e) {
             return ResponseEntity.status(500).body("An error occurred: " + e.getMessage());
         }
@@ -115,44 +113,5 @@ public class UserController {
             return email;
         }
     }
-
-    // DTO for representing user data in the responses
-    class User {
-        private String userId;
-        private String name;
-        private String email;
-        private boolean isVerified;
-
-        public String getUserId() {
-            return userId;
-        }
-
-        public void setUserId(String userId) {
-            this.userId = userId;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public Boolean getIsVerified() {
-            return isVerified;
-        }
-
-        public void setIsVerified(Boolean isVerified) {
-            this.isVerified = isVerified;
-        }
-    }
 }
+    // DTO for representing user data in the responses

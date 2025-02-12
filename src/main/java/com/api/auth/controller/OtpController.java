@@ -14,6 +14,7 @@ import com.api.auth.services.OtpService;
 
 @RestController
 @RequestMapping("/api/otp")
+@CrossOrigin(origins = "http://localhost:5173")
 public class OtpController {
 
     // Autowired dependencies
@@ -63,38 +64,6 @@ public class OtpController {
 
     }
 
-    // /**
-    // * Endpoint to verify OTP for password change.
-    // *
-    // * @param request Contains the userId, OTP, and new password.
-    // * @return ResponseEntity with success or failure message.
-    // */
-    @PostMapping("/verifyOtpForChangePassword")
-    public ResponseEntity<?> passwordOtp(@RequestBody ForgetPasswordDto request) {
-        try {
-            // // Verify OTP for password change
-            boolean isValid = otpService.verifyOtp(request.getUserId(), request.getOtp());
-
-            if (isValid) {
-                // // OTP is valid, change the user's password
-                Optional<UserModals> fetchUser = userRepo.findById(request.getUserId());
-                if (fetchUser.isPresent()) {
-                    UserModals user = fetchUser.get();
-                    user.setPassword(request.getPassword()); // Set the new password
-                   UserModals savedUser= userRepo.save(user); // Save the updated user details
-
-                    return ResponseEntity.status(201).body(savedUser);
-                }
-            }
-            return ResponseEntity.status(403).body("Otp is not Correct ");
-
-        } catch (Exception e) {
-            // TODO: handle exception
-            return ResponseEntity.status(500).body("Internal Server Error.");
-        }
-
-        // Return an error if OTP is invalid or the user is not found
-    }
 
 }
 
@@ -110,35 +79,4 @@ class EmailRequestDto {
         this.email = email;
     }
 
-}
-
-class ForgetPasswordDto {
-    private String userId;
-    private String otp;
-    private String Password;
-
-    // getters and setters
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getOtp() {
-        return otp;
-    }
-
-    public void setOtp(String otp) {
-        this.otp = otp;
-    }
-
-    public String getPassword() {
-        return Password;
-    }
-
-    public void setPassword(String password) {
-        Password = password;
-    }
 }

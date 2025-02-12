@@ -1,6 +1,7 @@
 package com.api.auth.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -12,7 +13,11 @@ import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
 import com.api.auth.modals.OtpModal;
+import com.api.auth.modals.UserModals;
 import com.api.auth.repositories.OtpRepo;
+import com.api.auth.repositories.UserRepo;
+import com.api.auth.Dto.ForgetPasswordDto;
+import com.api.auth.Dto.User;;
 
 @Service
 public class OtpService {
@@ -24,6 +29,9 @@ public class OtpService {
 
     @Autowired
     private OtpRepo otpRepo;
+
+    @Autowired
+    private UserRepo userRepo;
 
     /**
      * Generate a 6-digit OTP
@@ -119,8 +127,41 @@ public boolean verifyOtp(String userId, String otp) {
         e.printStackTrace(); // Optional: Print stack trace for debugging
         return false; // Return false in case of an error
     }
+   
 }
 
+public ResponseEntity<?> verifyOtpAndUpdatePassword( ForgetPasswordDto request) {
+    try {
+        // // Verify OTP for password change
+        boolean isValid = verifyOtp(request.getUserId(), request.getOtp());
+
+        if (isValid) {
+            // // OTP is valid, change the user's password
+            Optional<UserModals> fetchUser = userRepo.findById(request.getUserId());
+            if (fetchUser.isPresent()) {
+                UserModals user = fetchUser.get();
+                user.setPassword(request.getPassword()); // Set the new password
+                if(user.getVerified()==false){
+                    user.setVerified(true);
+                }
+               UserModals savedUser= userRepo.save(user); // Save the updated user details
+                User res= new User();
+                res.setEmail(savedUser.getEmail());
+                res.setName(savedUser.getName());
+                res.setUserId(savedUser.getId());
+                res.setIsVerified(savedUser.getVerified());
+
+                return ResponseEntity.status(201).body(savedUser);
+            }
+        }
+        return ResponseEntity.status(403).body("Otp is not Correct ");
+
+    } catch (Exception e) {
+        // TODO: handle exception
+        return ResponseEntity.status(500).body("Internal Server Error.");
+    }
+
+}
     /**
      * Delete OTP by User ID
      * 

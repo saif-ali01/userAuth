@@ -6,13 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.api.auth.modals.OtpModal;
 import com.api.auth.modals.UserModals;
 import com.api.auth.repositories.OtpRepo;
 import com.api.auth.repositories.UserRepo;
 import com.api.auth.services.OtpService;
 
 @RestController
-@RequestMapping("/api/otp") // Base URL for OTP related APIs
+@RequestMapping("/api/otp")
 public class OtpController {
 
     // Autowired dependencies
@@ -27,90 +28,80 @@ public class OtpController {
 
     /**
      * Endpoint to generate and send an OTP to the user's email.
+     * 
      * @param request Contains the email of the user for which OTP is generated.
      * @return ResponseEntity with success message.
      */
     @PostMapping("/generate")
-    public ResponseEntity<String> generateOtp(@RequestBody OtpRequest request) {
-        // Fetch the user by email
-        Optional<UserModals> fetchUser = userRepo.findByEmail(request.getEmail());
-        
-        // If user exists, generate and send OTP
-        if (fetchUser.isPresent()) {
-            UserModals user = fetchUser.get();
-            otpService.generateAndSendOtp(user.getId(), user.getEmail());
-            return ResponseEntity.status(200).body("OTP sent successfully!"); // Success response
-        }
-        
-        // If user does not exist
-        return ResponseEntity.status(404).body("User not found with the given email.");
-    }
+    public ResponseEntity<?> generateOtp(@RequestBody EmailRequestDto request) {
+        try { // Fetch the user by email
+            Optional<UserModals> fetchUser = userRepo.findByEmail(request.getEmail());
+            Optional<OtpModal> checkOtpIsAlreadyPresent;
 
-    /**
-     * Endpoint to verify OTP entered by the user.
-     * @param request Contains the userId and OTP entered by the user.
-     * @return ResponseEntity with success or failure message.
-     */
-    @PostMapping("/verify")
-    public ResponseEntity<String> verifyOtp(@RequestBody OtpVerificationRequest request) {
-
-        // Verify OTP using the service
-        boolean isValid = otpService.verifyOtp(request.getUserId(), request.getOtp());
-        if (isValid) {
-            // OTP is valid, update user verification status
-            Optional<UserModals> fetchUser = userRepo.findById(request.getUserId());
+            // // If user exists, generate and send OTP
             if (fetchUser.isPresent()) {
                 UserModals user = fetchUser.get();
-                user.setVerified(true); // Mark user as verified
-                userRepo.save(user); // Save the updated user details
-                
-                // Delete the OTP record from the database
-                otpRepo.deleteAllById(user.getId());
-                
-                return ResponseEntity.status(200).body("OTP verified successfully!");
+                checkOtpIsAlreadyPresent = otpRepo.findByUserId(user.getId());
+                if (checkOtpIsAlreadyPresent.isPresent()) {
+                    otpRepo.deleteAllByUserId(user.getId());// remove previous otp in db
+
+                }
+
+                otpService.generateAndSendOtp(user.getId(), user.getEmail());
+                return ResponseEntity.status(200).body("OTP sent successfully!"); // Success response
             }
+
+            // If user does not exist
+            return ResponseEntity.status(404).body("User Not Found in DB");
+
+        } catch (Exception e) {
+            // TODO: handle exception
+
+            return ResponseEntity.status(500).body("Internal Server Error.");
+
         }
-        
-        // Return an error if OTP is invalid or expired
-        return ResponseEntity.status(404).body("Invalid or expired OTP!");
+
     }
 
-    /**
-     * Endpoint to verify OTP for password change.
-     * @param request Contains the userId, OTP, and new password.
-     * @return ResponseEntity with success or failure message.
-     */
+    // /**
+    // * Endpoint to verify OTP for password change.
+    // *
+    // * @param request Contains the userId, OTP, and new password.
+    // * @return ResponseEntity with success or failure message.
+    // */
     @PostMapping("/verifyOtpForChangePassword")
-    public ResponseEntity<?> passwordOtp(@RequestBody ForgetPasswordOtp request) {
+    public ResponseEntity<?> passwordOtp(@RequestBody ForgetPasswordDto request) {
+        try {
+            // // Verify OTP for password change
+            boolean isValid = otpService.verifyOtp(request.getUserId(), request.getOtp());
 
-        // Verify OTP for password change
-        boolean isValid = otpService.verifyOtp(request.getUserId(), request.getOtp());
+            if (isValid) {
+                // // OTP is valid, change the user's password
+                Optional<UserModals> fetchUser = userRepo.findById(request.getUserId());
+                if (fetchUser.isPresent()) {
+                    UserModals user = fetchUser.get();
+                    user.setPassword(request.getPassword()); // Set the new password
+                   UserModals savedUser= userRepo.save(user); // Save the updated user details
 
-        if (isValid) {
-            // OTP is valid, change the user's password
-            Optional<UserModals> fetchUser = userRepo.findById(request.getUserId());
-            if (fetchUser.isPresent()) {
-                UserModals user = fetchUser.get();
-                user.setPassword(request.getPassword()); // Set the new password
-                userRepo.save(user); // Save the updated user details
-                
-                return ResponseEntity.status(201).body("Password successfully changed!");
+                    return ResponseEntity.status(201).body(savedUser);
+                }
             }
+            return ResponseEntity.status(403).body("Otp is not Correct ");
+
+        } catch (Exception e) {
+            // TODO: handle exception
+            return ResponseEntity.status(500).body("Internal Server Error.");
         }
-        
+
         // Return an error if OTP is invalid or the user is not found
-        return ResponseEntity.status(500).body("Invalid OTP or user not found.");
     }
 
 }
 
-/**
- * DTO for OTP request containing email and userId.
- */
-class OtpRequest {
-    private String userId;
+class EmailRequestDto {
     private String email;
 
+    // getters and setters
     public String getEmail() {
         return email;
     }
@@ -119,52 +110,35 @@ class OtpRequest {
         this.email = email;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
 }
 
-/**
- * DTO for OTP verification request containing userId and OTP.
- */
-class OtpVerificationRequest {
+class ForgetPasswordDto {
     private String userId;
     private String otp;
+    private String Password;
 
-    // Getters and Setters
+    // getters and setters
+    public String getUserId() {
+        return userId;
+    }
+
     public void setUserId(String userId) {
         this.userId = userId;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getOtp() {
+        return otp;
     }
 
     public void setOtp(String otp) {
         this.otp = otp;
     }
 
-    public String getOtp() {
-        return otp;
-    }
-}
-
-/**
- * DTO for password change request, extends OtpVerificationRequest to include password.
- */
-class ForgetPasswordOtp extends OtpVerificationRequest {
-
-    private String password;
-
-    // Getters and Setters
-    public void setPassword(String password) {
-        this.password = password;
-    }
     public String getPassword() {
-        return password;
+        return Password;
+    }
+
+    public void setPassword(String password) {
+        Password = password;
     }
 }

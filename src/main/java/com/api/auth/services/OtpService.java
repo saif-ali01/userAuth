@@ -6,8 +6,11 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
+
 import com.api.auth.modals.OtpModal;
 import com.api.auth.repositories.OtpRepo;
 
@@ -24,75 +27,106 @@ public class OtpService {
 
     /**
      * Generate a 6-digit OTP
+     * 
      * @return generated OTP
      */
-    public String generateOtp() {
-        // Using ThreadLocalRandom for better performance in multi-threaded environments
-        int generateOtp = ThreadLocalRandom.current().nextInt(100000, 1000000); // 6-digit OTP
-        return String.valueOf(generateOtp);
+    public String generateOtp(String userId) {
+            return String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
     }
 
     /**
      * Send the generated OTP to the user's email
+     * 
      * @param email User's email
-     * @param otp OTP to be sent
+     * @param otp   OTP to be sent
      */
-    public void sentOtpMail(String email, String otp) {
+    public void sendOtpMail(String email, String otp) {
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
             msg.setTo(email);
             msg.setSubject("Email Verification OTP");
             msg.setText("Your OTP is: " + otp);
             mailSender.send(msg);
-            logger.info("OTP sent to: " + email); // Log successful OTP sending
+            logger.info("OTP sent to: " + email);
         } catch (Exception e) {
-            logger.error("Error sending OTP to {}: {}", email, e.getMessage(), e); // Log error
+            logger.error("Error sending OTP to {}: {}", email, e.getMessage(), e);
         }
     }
 
     /**
      * Generate and send OTP to the user's email
+     * 
      * @param userId User ID for the OTP
-     * @param email User's email to send the OTP
+     * @param email  User's email to send the OTP
      */
     public void generateAndSendOtp(String userId, String email) {
-        String otp = generateOtp();
-        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(10); // OTP expiration time (10 minutes)
+       try  {
+     
+        String otp = generateOtp(userId);
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(10);
 
-        // Create a new OtpModal instance to store OTP details
         OtpModal otpEntity = new OtpModal();
         otpEntity.setUserId(userId);
         otpEntity.setOtp(otp);
         otpEntity.setExpiresAt(expiresAt);
 
-        sentOtpMail(email, otp); // Send OTP via email
-        otpRepo.save(otpEntity); // Save OTP in database for future verification
+        sendOtpMail(email, otp); // Send OTP
+        otpRepo.save(otpEntity); // Save OTP in the database
+        
+       } catch (Exception e) {
+        // TODO: handle exception
+       }
     }
 
     /**
      * Verify if the provided OTP is valid
+     * 
      * @param userId User ID to fetch the OTP record
-     * @param otp OTP provided for verification
+     * @param otp    OTP provided for verification
      * @return true if OTP matches and is valid, false otherwise
      */
-    public boolean verifyOtp(String userId, String otp) {
-        OtpModal otpRecord = otpRepo.findByUserId(userId);
-        if (otpRecord == null) {
-            return false; // OTP record not found
-        }
+    
+public boolean verifyOtp(String userId, String otp) {
+    try {
+        Optional<OtpModal> dbOtp = otpRepo.findByUserId(userId);
 
-        // Check if OTP is expired
-        if (otpRecord.getExpiresAt().isBefore(LocalDateTime.now())) {
-            otpRepo.delete(otpRecord); // Delete expired OTP record
+        if (dbOtp.isPresent()) {
+            OtpModal otpRecord = dbOtp.get();
+
+            // Check if OTP is expired
+            if (otpRecord.getExpiresAt().isBefore(LocalDateTime.now())) {
+                System.out.println("OTP has expired. Deleting record...");
+                otpRepo.deleteAllByUserId(userId); // Delete expired OTP
+                return false;
+            }
+
+            // Check if OTP matches
+            if (otpRecord.getOtp().equals(otp)) {
+                System.out.println("OTP is valid. Verifying and deleting record...");
+                otpRepo.deleteAllByUserId(userId); // Delete OTP after successful verification
+                return true;
+            }
+
+            System.out.println("OTP does not match.");
+            return false; // OTP does not match
+        } else {
+            System.out.println("No OTP record found for the given user.");
             return false;
         }
+    } catch (Exception e) {
+        // Handle any unexpected exceptions
+        System.err.println("An error occurred while verifying OTP: " + e.getMessage());
+        e.printStackTrace(); // Optional: Print stack trace for debugging
+        return false; // Return false in case of an error
+    }
+}
 
-        // Check if OTP matches
-        if (otpRecord.getOtp().equals(otp)) {
-            otpRepo.delete(otpRecord); // Delete OTP after successful verification
-            return true;
-        }
-
-        return false; // OTP does not match
+    /**
+     * Delete OTP by User ID
+     * 
+     * @param userId User ID to delete OTP records
+     */
+    public void deleteOtpByUserId(String userId) {
+        otpRepo.deleteAllByUserId(userId);
     }
 }

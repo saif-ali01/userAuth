@@ -15,7 +15,7 @@ import com.api.auth.services.OtpService;
 
 @RestController
 @RequestMapping("/api/otp")
-@CrossOrigin(origins = "https://loginpage01x.netlify.app")
+@CrossOrigin(origins = "*")
 public class OtpController {
 
     // Autowired dependencies

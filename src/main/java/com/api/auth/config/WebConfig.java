@@ -7,12 +7,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @SuppressWarnings("null")
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        // Global CORS configuration to allow all origins (can be changed based on security needs)
         registry.addMapping("/**") // Apply CORS for all endpoints
-                .allowedOriginPatterns("*") // Allow all origins (wildcard for patterns)
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Allowed HTTP methods
+                .allowedOrigins("http://localhost:5173","https://loginpage01x.netlify.app") // Frontend URL (for development)
+                .allowedMethods("GET", "POST", "PUT", "DELETE") // Allowed HTTP methods
                 .allowedHeaders("*") // Allow all headers
                 .allowCredentials(true); // Allow credentials (cookies, authorization headers)
     }

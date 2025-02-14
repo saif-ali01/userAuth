@@ -15,7 +15,7 @@ import com.api.auth.services.OtpService;
 
 @RestController
 @RequestMapping("/api/otp")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "https://loginpage01x.netlify.app")
 public class OtpController {
 
     // Autowired dependencies
@@ -35,36 +35,38 @@ public class OtpController {
      * @return ResponseEntity with success message.
      */
     @PostMapping("/generate")
-    public ResponseEntity<?> generateOtp(@RequestBody EmailRequestDto request) {
-        try { // Fetch the user by email
-            Optional<UserModals> fetchUser = userRepo.findByEmail(request.getEmail());
-            Optional<OtpModal> checkOtpIsAlreadyPresent;
-
-            // // If user exists, generate and send OTP
-            if (fetchUser.isPresent()) {
-                UserModals user = fetchUser.get();
-                checkOtpIsAlreadyPresent = otpRepo.findByUserId(user.getId());
-                if (checkOtpIsAlreadyPresent.isPresent()) {
-                    otpRepo.deleteAllByUserId(user.getId());// remove previous otp in db
-
-                }
-
-                otpService.generateAndSendOtp(user.getId(), user.getEmail());
-                return ResponseEntity.status(200).body("OTP sent successfully!"); // Success response
-            }
-
-            // If user does not exist
-            return ResponseEntity.status(404).body("User Not Found in DB");
-
-        } catch (Exception e) {
-            // TODO: handle exception
-
-            return ResponseEntity.status(500).body("Internal Server Error.");
-
+public ResponseEntity<?> generateOtp(@RequestBody EmailRequestDto request) {
+    try {
+        // Validate request
+        if (request.getEmail() == null || request.getEmail().isEmpty()) {
+            return ResponseEntity.status(400).body("Email is required");
         }
 
+        // Fetch user by email
+        Optional<UserModals> fetchUser = userRepo.findByEmail(request.getEmail());
+        if (fetchUser.isPresent()) {
+            UserModals user = fetchUser.get();
+
+            // Check if OTP already exists and delete it
+            Optional<OtpModal> checkOtpIsAlreadyPresent = otpRepo.findByUserId(user.getId());
+            if (checkOtpIsAlreadyPresent.isPresent()) {
+                otpRepo.deleteAllByUserId(user.getId());
+            }
+
+            // Generate and send OTP
+            otpService.generateAndSendOtp(user.getId(), user.getEmail());
+            return ResponseEntity.status(200).body("OTP sent successfully!");
+        }
+
+        // User not found
+        return ResponseEntity.status(404).body("User Not Found in DB");
+
+    } catch (Exception e) {
+        e.printStackTrace(); // Log the error
+        return ResponseEntity.status(500).body("Internal Server Error: " + e.getMessage());
     }
-    
+}
+
     @PostMapping("/verify")
     public ResponseEntity<String> verifyOtp(@RequestBody OtpVerificationRequestDto request) {
         boolean isValid = otpService.verifyOtp(request.getUserId(), request.getOtp());

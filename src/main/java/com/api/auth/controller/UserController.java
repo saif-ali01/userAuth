@@ -14,7 +14,7 @@ import com.api.auth.services.OtpService;
 
 @RestController
 @RequestMapping("/auth") // Base URL for authentication-related routes
-@CrossOrigin(origins ={ "http://localhost:5173","https://loginpage01x.netlify.app"})
+@CrossOrigin(origins = { "http://localhost:5173", "https://loginpage01x.netlify.app" })
 public class UserController {
 
     // Dependency injection for repositories and services
@@ -23,7 +23,6 @@ public class UserController {
 
     @Autowired
     private OtpService otpService;
-
 
     // POST endpoint for user registration
     @PostMapping("/register")
@@ -39,13 +38,13 @@ public class UserController {
             }
 
             UserModals savedUser = userRepo.save(request);
-            
+
             User user = new User();
             user.setEmail(savedUser.getEmail());
             user.setName(savedUser.getName());
             user.setUserId(savedUser.getId());
             user.setIsVerified(savedUser.getVerified());
-            
+
             return ResponseEntity.status(201).body(user);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("An error occurred: " + e.getMessage());
@@ -83,18 +82,42 @@ public class UserController {
         }
     }
 
+    @GetMapping("/getUser")
+    public ResponseEntity<?> getUserByEmail(@RequestParam String email) {
+        try {
+            // Perform case-insensitive search using regex in MongoDB
+            Optional<UserModals> fetchUser = userRepo.findByEmailRegexIgnoreCase(email);
+    
+            if (fetchUser.isEmpty()) {
+                return ResponseEntity.status(404).body("User does not exist with this email");
+            }
+    
+            UserModals getUser = fetchUser.get();
+            User user = new User();
+            user.setEmail(getUser.getEmail());
+            user.setName(getUser.getName());
+            user.setUserId(getUser.getId());
+            user.setIsVerified(getUser.getVerified());
+    
+            return ResponseEntity.status(200).body(user);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("An error occurred: " + e.getMessage());
+        }
+    }
+    
+
     // POST endpoint for forgot password
     @PostMapping("/forgetpassword")
     public ResponseEntity<?> forgetPassword(@RequestBody ForgetPasswordDto request) {
         try {
-            Optional<UserModals> fetchUser = userRepo.findById(request.getUserId());
-            
+            Optional<UserModals> fetchUser = userRepo.findByEmail(request.getEmail());
+
             if (fetchUser.isEmpty()) {
                 return ResponseEntity.status(404).body("USER NOT FOUND");
             }
-           
-           ResponseEntity<?> res= otpService.verifyOtpAndUpdatePassword(request);
-          
+
+            ResponseEntity<?> res = otpService.verifyOtpAndUpdatePassword(request);
+
             return ResponseEntity.status(res.getStatusCode()).body(res.getBody());
         } catch (Exception e) {
             return ResponseEntity.status(500).body("An error occurred: " + e.getMessage());
@@ -114,4 +137,4 @@ public class UserController {
         }
     }
 }
-    // DTO for representing user data in the responses
+// DTO for representing user data in the responses

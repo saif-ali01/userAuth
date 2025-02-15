@@ -129,39 +129,48 @@ public boolean verifyOtp(String userId, String otp) {
     }
    
 }
-
-public ResponseEntity<?> verifyOtpAndUpdatePassword( ForgetPasswordDto request) {
+//email otp pass
+public ResponseEntity<?> verifyOtpAndUpdatePassword(ForgetPasswordDto request) {
     try {
-        // // Verify OTP for password change
-        boolean isValid = verifyOtp(request.getUserId(), request.getOtp());
+        // Find user by email
+        Optional<UserModals> findUser = userRepo.findByEmail(request.getEmail());
 
-        if (isValid) {
-            // // OTP is valid, change the user's password
-            Optional<UserModals> fetchUser = userRepo.findById(request.getUserId());
-            if (fetchUser.isPresent()) {
-                UserModals user = fetchUser.get();
-                user.setPassword(request.getPassword()); // Set the new password
-                if(user.getVerified()==false){
-                    user.setVerified(true);
-                }
-               UserModals savedUser= userRepo.save(user); // Save the updated user details
-                User res= new User();
-                res.setEmail(savedUser.getEmail());
-                res.setName(savedUser.getName());
-                res.setUserId(savedUser.getId());
-                res.setIsVerified(savedUser.getVerified());
-
-                return ResponseEntity.status(201).body(res);
-            }
+        if (findUser.isEmpty()) {
+            return ResponseEntity.status(404).body("USER NOT FOUND");
         }
-        return ResponseEntity.status(403).body("Otp is not Correct ");
+
+        UserModals userDB = findUser.get();
+        boolean isValid = verifyOtp(userDB.getId(), request.getOtp());
+
+        if (!isValid) {
+            return ResponseEntity.status(403).body("OTP is not correct");
+        }
+
+        // Set the new password directly (No encryption)
+        userDB.setPassword(request.getPassword());
+
+        // Verify user if not already verified
+        if (!userDB.getVerified()) {
+            userDB.setVerified(true);
+        }
+
+        // Save updated user details
+        UserModals savedUser = userRepo.save(userDB);
+
+        // Return response with relevant user details
+        User res = new User();
+        res.setEmail(savedUser.getEmail());
+        res.setName(savedUser.getName());
+        res.setUserId(savedUser.getId());
+        res.setIsVerified(savedUser.getVerified());
+
+        return ResponseEntity.status(201).body(res);
 
     } catch (Exception e) {
-        // TODO: handle exception
         return ResponseEntity.status(500).body("Internal Server Error.");
     }
-
 }
+
     /**
      * Delete OTP by User ID
      * 

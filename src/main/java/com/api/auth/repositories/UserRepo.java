@@ -8,4 +8,5 @@ import com.api.auth.modals.UserModals;
 
 public interface UserRepo extends MongoRepository<UserModals ,String> {
     Optional<UserModals> findByEmail(String email);
+    Optional<UserModals> findByEmailRegexIgnoreCase(String email);
 }

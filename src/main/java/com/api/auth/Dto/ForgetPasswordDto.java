@@ -1,18 +1,17 @@
 package com.api.auth.Dto;
 
-
 public class ForgetPasswordDto {
-    private String userId;
+    private String email;
     private String otp;
     private String Password;
 
     // getters and setters
-    public String getUserId() {
-        return userId;
+    public String getEmail() {
+        return email;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getOtp() {
